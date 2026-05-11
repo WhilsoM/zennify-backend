@@ -1,0 +1,9 @@
+/gen/
+/bin/
+/dist/
+*.test
+.env
+.env.*
+!.env.example
+.DS_Store
+.cursorrules

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package health.v1;
+
+option go_package = "github.com/zennify/backend/gen/go/health/v1;healthv1";
+
+service HealthService {
+  rpc Check(HealthServiceCheckRequest) returns (HealthServiceCheckResponse);
+}
+
+message HealthServiceCheckRequest {}
+
+message HealthServiceCheckResponse {
+  string status = 1;
+}
