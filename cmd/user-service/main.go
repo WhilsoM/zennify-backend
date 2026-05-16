@@ -12,10 +12,10 @@ import (
 
 	"github.com/zennify/backend/internal/shared/grpcserver"
 	sharedpostgres "github.com/zennify/backend/internal/shared/postgres"
-	"github.com/zennify/backend/internal/user/app"
+	userpostgres "github.com/zennify/backend/internal/user/adapters/db/postgres"
+	usergrpc "github.com/zennify/backend/internal/user/adapters/grpc"
 	userConfig "github.com/zennify/backend/internal/user/config"
-	userpostgres "github.com/zennify/backend/internal/user/store/postgres"
-	grpcapi "github.com/zennify/backend/internal/user/transport/grpc"
+	"github.com/zennify/backend/internal/user/core/services"
 )
 
 func main() {
@@ -60,10 +60,10 @@ func run() error {
 	}()
 
 	userRepo := userpostgres.NewUserRepository(pool)
-	svc := app.NewService(userRepo)
+	svc := services.NewService(userRepo)
 
 	return grpcserver.Run(cfg.GRPCAddr, "user-service", 10*time.Second, func(s *grpc.Server) {
-		grpcapi.Register(s, svc)
+		usergrpc.Register(s, svc)
 		reflection.Register(s)
 	})
 }

@@ -10,11 +10,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/zennify/backend/internal/auth/app"
+	authgrpc "github.com/zennify/backend/internal/auth/adapters/grpc"
+	"github.com/zennify/backend/internal/auth/adapters/memory"
 	authconfig "github.com/zennify/backend/internal/auth/config"
-	usergrpc "github.com/zennify/backend/internal/auth/store/grpc"
-	"github.com/zennify/backend/internal/auth/store/memory"
-	grpcapi "github.com/zennify/backend/internal/auth/transport/grpc"
+	"github.com/zennify/backend/internal/auth/core/services"
 	"github.com/zennify/backend/internal/shared/grpcserver"
 )
 
@@ -43,7 +42,7 @@ func run() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	users, err := usergrpc.NewUserClient(ctx, cfg.UserServiceGRPCAddr)
+	users, err := authgrpc.NewUserClient(ctx, cfg.UserServiceGRPCAddr)
 	if err != nil {
 		return fmt.Errorf("user service client: %w", err)
 	}
@@ -54,13 +53,13 @@ func run() error {
 	}()
 
 	sessions := memory.NewRefreshSessionStore()
-	svc, err := app.NewService(users, sessions, []byte(cfg.JWTSecret), cfg.AccessTTL, cfg.RefreshTTL)
+	svc, err := services.NewService(users, sessions, []byte(cfg.JWTSecret), cfg.AccessTTL, cfg.RefreshTTL)
 	if err != nil {
-		return fmt.Errorf("app: %w", err)
+		return fmt.Errorf("services: %w", err)
 	}
 
 	return grpcserver.Run(cfg.GRPCAddr, "auth-service", 10*time.Second, func(s *grpc.Server) {
-		grpcapi.Register(s, svc)
+		authgrpc.Register(s, svc)
 		reflection.Register(s)
 	})
 }

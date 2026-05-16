@@ -12,7 +12,7 @@ import (
 type Config struct {
 	GRPCAddr            string        `env:"AUTH_GRPC_ADDR" envDefault:":50051"`
 	UserServiceGRPCAddr string        `env:"AUTH_USER_SERVICE_GRPC_ADDR" envDefault:":50052"`
-	JWTSecret           string        `env:"AUTH_JWT_SECRET,required"`
+	JWTSecret           string        `env:"JWT_SECRET,required"`
 	AccessTTL           time.Duration `env:"AUTH_ACCESS_TTL" envDefault:"15m"`
 	RefreshTTL          time.Duration `env:"AUTH_REFRESH_TTL" envDefault:"168h"`
 }

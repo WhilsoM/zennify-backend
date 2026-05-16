@@ -6,10 +6,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/zennify/backend/internal/gateway/app"
+	grpcstore "github.com/zennify/backend/internal/gateway/adapters/grpc"
+	httpapi "github.com/zennify/backend/internal/gateway/adapters/http"
 	"github.com/zennify/backend/internal/gateway/config"
-	grpcstore "github.com/zennify/backend/internal/gateway/store/grpc"
-	httpapi "github.com/zennify/backend/internal/gateway/transport/http"
+	"github.com/zennify/backend/internal/gateway/core/services"
 	"github.com/zennify/backend/internal/shared/httpserver"
 )
 
@@ -51,8 +51,7 @@ func run() error {
 	}()
 
 	authClient := grpcstore.NewAuthClient(authConn)
-
-	svc := app.NewService(authClient, []byte(cfg.JWTSecret), cfg.RequestTimeout)
+	svc := services.NewService(authClient, []byte(cfg.JWTSecret), cfg.RequestTimeout)
 	router := httpapi.NewRouter(svc, logger)
 
 	return httpserver.Run(cfg.HTTPAddr, "api-gateway", cfg.ShutdownTimeout, router)

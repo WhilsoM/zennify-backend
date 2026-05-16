@@ -1,8 +1,11 @@
 # Zennify backend
 
-user-service 
+Проверки: `make check` (fmt + lint + test).
 
-ports: 
-gateway - :8080
-auth - :50051
-user - :50052
+## Ports
+
+| Service | Port |
+|---------|------|
+| gateway | :8080 |
+| auth    | :50051 |
+| user    | :50052 |
