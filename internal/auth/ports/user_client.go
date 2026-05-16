@@ -15,6 +15,6 @@ type User struct {
 type UserClient interface {
 	Ping(ctx context.Context) error
 
-	CreateUser(ctx context.Context, username, passwordHash string) (userID string, createdAt time.Time, err error)
+	CreateUser(ctx context.Context, username, password string) (userID string, createdAt time.Time, err error)
 	UserByUsername(ctx context.Context, username string) (User, error)
 }

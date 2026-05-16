@@ -12,6 +12,7 @@ import (
 	authv1 "github.com/zennify/backend/gen/go/auth/v1"
 	"github.com/zennify/backend/internal/auth/app"
 	"github.com/zennify/backend/internal/auth/ports"
+	"github.com/zennify/backend/internal/shared/grpcerr"
 )
 
 type authServer struct {
@@ -90,12 +91,12 @@ func (a *authServer) RefreshTokens(ctx context.Context, req *authv1.RefreshToken
 func mapAuthErr(err error) error {
 	switch {
 	case errors.Is(err, ports.ErrUsernameTaken):
-		return status.Error(codes.AlreadyExists, err.Error())
+		return grpcerr.ClientError(codes.AlreadyExists, grpcerr.MsgUsernameTaken)
 	case errors.Is(err, ports.ErrInvalidCredentials):
-		return status.Error(codes.Unauthenticated, err.Error())
+		return grpcerr.ClientError(codes.Unauthenticated, grpcerr.MsgInvalidCredentials)
 	case errors.Is(err, ports.ErrInvalidRefreshToken):
-		return status.Error(codes.Unauthenticated, err.Error())
+		return grpcerr.ClientError(codes.Unauthenticated, grpcerr.MsgInvalidRefreshToken)
 	default:
-		return status.Errorf(codes.Internal, "auth: %v", err)
+		return grpcerr.ClientError(codes.Internal, grpcerr.MsgInternal)
 	}
 }

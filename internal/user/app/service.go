@@ -1,8 +1,11 @@
 package app
 
+import "github.com/zennify/backend/internal/user/ports"
+
 type Service struct {
+	users ports.UserRepository
 }
 
-func NewService() *Service {
-	return &Service{}
+func NewService(users ports.UserRepository) *Service {
+	return &Service{users: users}
 }

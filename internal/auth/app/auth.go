@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,12 +12,7 @@ import (
 )
 
 func (s *Service) Register(ctx context.Context, username, password string) (userID string, createdAt time.Time, err error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", time.Time{}, fmt.Errorf("app: hash password: %w", err)
-	}
-
-	id, created, err := s.users.CreateUser(ctx, username, string(hash))
+	id, created, err := s.users.CreateUser(ctx, username, password)
 	if err != nil {
 		return "", time.Time{}, err
 	}
@@ -27,7 +23,7 @@ func (s *Service) Register(ctx context.Context, username, password string) (user
 func (s *Service) Login(ctx context.Context, username, password string) (accessToken, refreshToken string, err error) {
 	u, err := s.users.UserByUsername(ctx, username)
 	if err != nil {
-		if err == ports.ErrUserNotFound {
+		if errors.Is(err, ports.ErrUserNotFound) {
 			return "", "", ports.ErrInvalidCredentials
 		}
 		return "", "", fmt.Errorf("app: load user: %w", err)

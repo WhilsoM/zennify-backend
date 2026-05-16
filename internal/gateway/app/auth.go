@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 
 	authv1 "github.com/zennify/backend/gen/go/auth/v1"
 	"github.com/zennify/backend/internal/gateway/ports"
@@ -15,7 +14,7 @@ func (s *Service) Register(ctx context.Context, req *ports.RegisterRequest) (*po
 		return s.auth.Register(callCtx, req)
 	})
 	if err != nil {
-		return nil, fmt.Errorf("gateway app: register: %w", err)
+		return nil, err
 	}
 	pb := out.(*authv1.RegisterResponse)
 	resp := &ports.RegisterResponse{
@@ -35,7 +34,7 @@ func (s *Service) Login(ctx context.Context, req *ports.LoginRequest) (*authv1.L
 		return s.auth.Login(callCtx, req)
 	})
 	if err != nil {
-		return nil, fmt.Errorf("gateway app: login: %w", err)
+		return nil, err
 	}
 	return out.(*authv1.LoginResponse), nil
 }
@@ -47,7 +46,7 @@ func (s *Service) RefreshTokens(ctx context.Context, req *ports.RefreshTokensReq
 		return s.auth.RefreshTokens(callCtx, req)
 	})
 	if err != nil {
-		return nil, fmt.Errorf("gateway app: refresh: %w", err)
+		return nil, err
 	}
 	return out.(*authv1.RefreshTokensResponse), nil
 }
