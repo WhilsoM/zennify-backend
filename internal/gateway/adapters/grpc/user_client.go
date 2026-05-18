@@ -25,9 +25,20 @@ func NewUserConn(addr string) (*grpc.ClientConn, error) {
 	return grpc.NewClient(grpcaddr.DialTarget(addr), grpc.WithTransportCredentials(insecure.NewCredentials()))
 }
 
-func (c *UserClient) CreateUser(ctx context.Context, req *ports.CreateUserRequest) (*userv1.CreateUserResponse, error) {
-	return c.user.CreateUser(ctx, &userv1.CreateUserRequest{
-		Username: req.Username,
-		Password: req.Password,
-	})
+func (c *UserClient) GetUserByID(ctx context.Context, userID string) (*ports.UserProfile, error) {
+	req := &userv1.GetUserByIDRequest{UserId: userID}
+
+	resp, err := c.user.GetUserByID(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	profile := &ports.UserProfile{
+		UserID:   resp.GetUserId(),
+		Username: resp.GetUsername(),
+	}
+	if ts := resp.GetCreatedAt(); ts != nil {
+		profile.CreatedAt = ts.AsTime()
+	}
+	return profile, nil
 }

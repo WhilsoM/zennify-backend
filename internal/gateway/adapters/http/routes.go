@@ -37,5 +37,5 @@ func mountAuthRoutes(h *Handler) func(chi.Router) {
 }
 
 func mountProtectedRoutes(r chi.Router, h *Handler) {
-	r.Get("/me", h.health)
+	r.Get("/users/me", h.getProfile)
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -47,6 +48,28 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (do
 			return domain.User{}, ports.ErrUserNotFound
 		}
 		return domain.User{}, fmt.Errorf("postgres: get user by username: %w", err)
+	}
+	return user, nil
+}
+
+func (r *UserRepository) GetByID(ctx context.Context, id string) (domain.User, error) {
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		return domain.User{}, ports.ErrUserNotFound
+	}
+
+	var user domain.User
+	err = r.pool.QueryRow(ctx, queries.UserGetByID, userID).Scan(
+		&user.ID,
+		&user.Username,
+		&user.PasswordHash,
+		&user.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.User{}, ports.ErrUserNotFound
+		}
+		return domain.User{}, fmt.Errorf("postgres: get user by id: %w", err)
 	}
 	return user, nil
 }

@@ -1,3 +1,4 @@
+// Package httpserver runs an HTTP server with graceful shutdown on SIGINT/SIGTERM.
 package httpserver
 
 import (
@@ -11,6 +12,10 @@ import (
 	"time"
 )
 
+// Run serves handler on addr and blocks until shutdown or a fatal serve error.
+//
+// On SIGINT or SIGTERM, Shutdown is called with a context bounded by shutdownTimeout.
+// shutdownTimeout defaults to 10s when <= 0. serviceName is only used in the startup log.
 func Run(addr, serviceName string, shutdownTimeout time.Duration, handler http.Handler) error {
 	if shutdownTimeout <= 0 {
 		shutdownTimeout = 10 * time.Second

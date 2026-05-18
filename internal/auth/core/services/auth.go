@@ -33,51 +33,29 @@ func (s *Service) Login(ctx context.Context, req ports.LoginRequest) (accessToke
 		return "", "", ports.ErrInvalidCredentials
 	}
 
-	access, err := s.tokens.mintAccess(u.ID, u.Username)
-	if err != nil {
-		return "", "", err
-	}
-
-	refresh, jti, err := s.tokens.mintRefresh(u.ID, u.Username)
-	if err != nil {
-		return "", "", err
-	}
-
-	expiresAt := time.Now().UTC().Add(s.refreshTTL)
-	if err := s.sessions.SaveRefreshJTI(ctx, jti, u.ID, expiresAt); err != nil {
-		return "", "", fmt.Errorf("auth services: save refresh session: %w", err)
-	}
-
-	return access, refresh, nil
+	return s.issueTokenPair(u.ID, u.Username)
 }
 
 func (s *Service) RefreshTokens(ctx context.Context, req ports.RefreshTokensRequest) (accessToken, refreshTokenOut string, err error) {
-	userIDClaim, usernameClaim, jti, err := s.tokens.parseRefresh(req.RefreshToken)
+	_ = ctx
+	userID, username, err := s.tokens.parseRefresh(req.RefreshToken)
 	if err != nil {
 		return "", "", ports.ErrInvalidRefreshToken
 	}
 
-	storedUserID, err := s.sessions.UserIDForRefreshJTI(ctx, jti)
-	if err != nil {
-		return "", "", ports.ErrInvalidRefreshToken
-	}
-	if storedUserID != userIDClaim {
-		return "", "", ports.ErrInvalidRefreshToken
-	}
+	return s.issueTokenPair(userID, username)
+}
 
-	if err := s.sessions.DeleteRefreshJTI(ctx, jti); err != nil {
-		return "", "", fmt.Errorf("auth services: delete refresh jti: %w", err)
-	}
-
-	access, err := s.tokens.mintAccess(userIDClaim, usernameClaim)
-	if err != nil {
-		return "", "", fmt.Errorf("auth services: mint access token: %w", err)
-	}
-
-	newRefresh, _, err := s.tokens.mintRefresh(userIDClaim, usernameClaim)
+func (s *Service) issueTokenPair(userID, username string) (accessToken, refreshToken string, err error) {
+	access, err := s.tokens.mintAccess(userID, username)
 	if err != nil {
 		return "", "", err
 	}
 
-	return access, newRefresh, nil
+	refresh, err := s.tokens.mintRefresh(userID, username)
+	if err != nil {
+		return "", "", err
+	}
+
+	return access, refresh, nil
 }

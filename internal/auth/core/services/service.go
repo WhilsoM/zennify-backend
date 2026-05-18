@@ -8,24 +8,17 @@ import (
 )
 
 type Service struct {
-	users      ports.UserClient
-	sessions   ports.RefreshSessionStore
-	tokens     *tokenIssuer
-	refreshTTL time.Duration
+	users  ports.UserClient
+	tokens *tokenIssuer
 }
 
-func NewService(users ports.UserClient, sessions ports.RefreshSessionStore, jwtSecret []byte, accessTTL, refreshTTL time.Duration) (*Service, error) {
+func NewService(users ports.UserClient, jwtSecret []byte, accessTTL, refreshTTL time.Duration) (*Service, error) {
 	ti, err := newTokenIssuer(jwtSecret, accessTTL, refreshTTL)
 	if err != nil {
 		return nil, fmt.Errorf("auth services: token issuer: %w", err)
 	}
-	if refreshTTL <= 0 {
-		refreshTTL = 7 * 24 * time.Hour
-	}
 	return &Service{
-		users:      users,
-		sessions:   sessions,
-		tokens:     ti,
-		refreshTTL: refreshTTL,
+		users:  users,
+		tokens: ti,
 	}, nil
 }

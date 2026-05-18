@@ -2,10 +2,8 @@ package grpcapi
 
 import (
 	"context"
-	"errors"
 
 	"github.com/go-playground/validator/v10"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	authv1 "github.com/zennify/backend/gen/go/auth/v1"
@@ -33,12 +31,12 @@ func (a *authServer) Register(ctx context.Context, req *authv1.RegisterRequest) 
 		Password: req.GetPassword(),
 	}
 	if err := a.vld.Struct(in); err != nil {
-		return nil, grpcerr.ClientError(codes.InvalidArgument, grpcerr.MsgInvalidRequest)
+		return nil, grpcerr.InvalidRequest()
 	}
 
 	userID, createdAt, err := a.svc.Register(ctx, in)
 	if err != nil {
-		return nil, mapAuthErr(err)
+		return nil, toGRPC(err)
 	}
 
 	return &authv1.RegisterResponse{
@@ -54,12 +52,12 @@ func (a *authServer) Login(ctx context.Context, req *authv1.LoginRequest) (*auth
 		Password: req.GetPassword(),
 	}
 	if err := a.vld.Struct(in); err != nil {
-		return nil, grpcerr.ClientError(codes.InvalidArgument, grpcerr.MsgInvalidRequest)
+		return nil, grpcerr.InvalidRequest()
 	}
 
 	access, refresh, err := a.svc.Login(ctx, in)
 	if err != nil {
-		return nil, mapAuthErr(err)
+		return nil, toGRPC(err)
 	}
 
 	return &authv1.LoginResponse{
@@ -73,29 +71,16 @@ func (a *authServer) RefreshTokens(ctx context.Context, req *authv1.RefreshToken
 		RefreshToken: req.GetRefreshToken(),
 	}
 	if err := a.vld.Struct(in); err != nil {
-		return nil, grpcerr.ClientError(codes.InvalidArgument, grpcerr.MsgInvalidRequest)
+		return nil, grpcerr.InvalidRequest()
 	}
 
 	access, refresh, err := a.svc.RefreshTokens(ctx, in)
 	if err != nil {
-		return nil, mapAuthErr(err)
+		return nil, toGRPC(err)
 	}
 
 	return &authv1.RefreshTokensResponse{
 		AccessToken:  access,
 		RefreshToken: refresh,
 	}, nil
-}
-
-func mapAuthErr(err error) error {
-	switch {
-	case errors.Is(err, ports.ErrUsernameTaken):
-		return grpcerr.ClientError(codes.AlreadyExists, grpcerr.MsgUsernameTaken)
-	case errors.Is(err, ports.ErrInvalidCredentials):
-		return grpcerr.ClientError(codes.Unauthenticated, grpcerr.MsgInvalidCredentials)
-	case errors.Is(err, ports.ErrInvalidRefreshToken):
-		return grpcerr.ClientError(codes.Unauthenticated, grpcerr.MsgInvalidRefreshToken)
-	default:
-		return grpcerr.ClientError(codes.Internal, grpcerr.MsgInternal)
-	}
 }

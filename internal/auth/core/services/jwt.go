@@ -55,8 +55,7 @@ func (t *tokenIssuer) mintAccess(userID, username string) (string, error) {
 	return signed, nil
 }
 
-func (t *tokenIssuer) mintRefresh(userID, username string) (token string, jti string, err error) {
-	jti = uuid.NewString()
+func (t *tokenIssuer) mintRefresh(userID, username string) (string, error) {
 	now := time.Now().UTC()
 	exp := now.Add(t.refreshTTL)
 
@@ -64,19 +63,19 @@ func (t *tokenIssuer) mintRefresh(userID, username string) (token string, jti st
 		"sub":      userID,
 		"username": username,
 		"typ":      claimTypeRefresh,
-		"jti":      jti,
+		"jti":      uuid.NewString(),
 		"iat":      now.Unix(),
 		"exp":      exp.Unix(),
 	}
 
 	signed, signErr := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(t.secret)
 	if signErr != nil {
-		return "", "", fmt.Errorf("auth services: sign refresh token: %w", signErr)
+		return "", fmt.Errorf("auth services: sign refresh token: %w", signErr)
 	}
-	return signed, jti, nil
+	return signed, nil
 }
 
-func (t *tokenIssuer) parseRefresh(token string) (userID, username, jti string, err error) {
+func (t *tokenIssuer) parseRefresh(token string) (userID, username string, err error) {
 	parsed, err := jwt.Parse(token, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("auth services: unexpected signing method: %v", token.Header["alg"])
@@ -84,22 +83,21 @@ func (t *tokenIssuer) parseRefresh(token string) (userID, username, jti string, 
 		return t.secret, nil
 	})
 	if err != nil || !parsed.Valid {
-		return "", "", "", fmt.Errorf("auth services: parse refresh token: %w", err)
+		return "", "", fmt.Errorf("auth services: parse refresh token: %w", err)
 	}
 
 	claims, ok := parsed.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", "", "", fmt.Errorf("auth services: refresh claims type")
+		return "", "", fmt.Errorf("auth services: refresh claims type")
 	}
 	if typ, _ := claims["typ"].(string); typ != claimTypeRefresh {
-		return "", "", "", fmt.Errorf("auth services: refresh token typ")
+		return "", "", fmt.Errorf("auth services: refresh token typ")
 	}
 
 	usernameClaim, _ := claims["username"].(string)
 	sub, _ := claims["sub"].(string)
-	jtiClaim, _ := claims["jti"].(string)
-	if sub == "" || jtiClaim == "" {
-		return "", "", "", fmt.Errorf("auth services: refresh token missing sub/jti")
+	if sub == "" {
+		return "", "", fmt.Errorf("auth services: refresh token missing sub")
 	}
-	return sub, usernameClaim, jtiClaim, nil
+	return sub, usernameClaim, nil
 }

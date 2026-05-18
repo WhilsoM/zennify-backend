@@ -9,15 +9,16 @@ import "google/protobuf/timestamp.proto";
 service UserService {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   rpc GetUserByUsername(GetUserByUsernameRequest) returns (GetUserByUsernameResponse);
+  rpc GetUserByID(GetUserByIDRequest) returns (GetUserProfileResponse);
   rpc Health(HealthRequest) returns (HealthResponse);
 }
 
-message CreateUserRequest { 
+message CreateUserRequest {
   string username = 1;
   string password = 2;
 }
 
-message CreateUserResponse { 
+message CreateUserResponse {
   string user_id = 1;
   string username = 2;
   google.protobuf.Timestamp created_at = 3;
@@ -34,8 +35,18 @@ message GetUserByUsernameResponse {
   google.protobuf.Timestamp created_at = 4;
 }
 
-message HealthRequest { }
+message GetUserByIDRequest {
+  string user_id = 1;
+}
 
-message HealthResponse { 
-	string message = 1;
+message GetUserProfileResponse {
+  string user_id = 1;
+  string username = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string message = 1;
 }

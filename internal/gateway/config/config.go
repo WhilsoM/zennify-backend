@@ -19,7 +19,7 @@ type Config struct {
 
 type ServicesAddresses struct {
 	AuthGRPCAddr string `env:"AUTH_GRPC_ADDR" envDefault:":50051"`
-	UserGRPCAddr string `env:"USER_GRPC_ADDR"`
+	UserGRPCAddr string `env:"USER_GRPC_ADDR" envDefault:":50052"`
 }
 
 func LoadConfig() (*Config, error) {

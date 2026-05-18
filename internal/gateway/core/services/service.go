@@ -12,6 +12,7 @@ import (
 
 type Service struct {
 	auth           ports.AuthClient
+	users          ports.UserClient
 	breaker        *gobreaker.CircuitBreaker
 	jwtSecret      []byte
 	requestTimeout time.Duration
@@ -22,14 +23,15 @@ type AccessClaims struct {
 	Username string
 }
 
-func NewService(auth ports.AuthClient, jwtSecret []byte, requestTimeout time.Duration) *Service {
+func NewService(auth ports.AuthClient, users ports.UserClient, jwtSecret []byte, requestTimeout time.Duration) *Service {
 	if requestTimeout <= 0 {
 		requestTimeout = 5 * time.Second
 	}
 	return &Service{
-		auth: auth,
+		auth:  auth,
+		users: users,
 		breaker: gobreaker.NewCircuitBreaker(gobreaker.Settings{
-			Name:    "gateway-auth-service",
+			Name:    "gateway-upstream",
 			Timeout: 20 * time.Second,
 		}),
 		jwtSecret:      jwtSecret,

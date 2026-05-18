@@ -1,3 +1,4 @@
+// Package postgres opens a shared PostgreSQL connection pool for microservices.
 package postgres
 
 import (
@@ -8,6 +9,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// PoolConfig holds pgxpool settings applied when creating a pool.
+//
+// URL is a PostgreSQL connection string (postgres://…). Zero values for duration
+// and connection limits leave pgx defaults after ParseConfig.
 type PoolConfig struct {
 	URL               string
 	MaxConns          int32
@@ -17,6 +22,10 @@ type PoolConfig struct {
 	HealthCheckPeriod time.Duration
 }
 
+// NewPool parses cfg, creates a pgxpool.Pool, and verifies connectivity with Ping.
+//
+// The pool is closed and an error is returned if Ping fails, so callers can fail
+// fast at process startup instead of on the first query.
 func NewPool(ctx context.Context, cfg PoolConfig) (*pgxpool.Pool, error) {
 	poolCfg, err := pgxpool.ParseConfig(cfg.URL)
 	if err != nil {

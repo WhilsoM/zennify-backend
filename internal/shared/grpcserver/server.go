@@ -1,3 +1,4 @@
+// Package grpcserver runs a gRPC server with graceful shutdown on SIGINT/SIGTERM.
 package grpcserver
 
 import (
@@ -13,12 +14,13 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Run grpc server with graceful shutdown
-// @param addr - address to listen
-// @param serviceName - name of the service
-// @param shutdownTimeout - timeout for graceful shutdown
-// @param configure - function to configure the grpc server
-// @return error if any
+// Run listens on addr, registers services via configure, and blocks until shutdown.
+//
+// configure is called with a new grpc.Server to register service implementations.
+// On SIGINT or SIGTERM, GracefulStop is used; if it does not finish within
+// shutdownTimeout, Stop forces termination. shutdownTimeout defaults to 10s when <= 0.
+//
+// serviceName is only used in the startup log line.
 func Run(addr, serviceName string, shutdownTimeout time.Duration, configure func(*grpc.Server)) error {
 	if shutdownTimeout <= 0 {
 		shutdownTimeout = 10 * time.Second

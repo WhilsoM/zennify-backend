@@ -25,8 +25,8 @@ type RegisterResponse struct {
 }
 
 type LoginRequest struct {
-	Username string `json:"username" validate:"required,min=1,max=64"`
-	Password string `json:"password" validate:"required,min=1,max=128"`
+	Username string `json:"username" validate:"required,min=3,max=64"`
+	Password string `json:"password" validate:"required,min=8,max=128"`
 }
 
 type RefreshTokensRequest struct {

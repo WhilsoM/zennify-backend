@@ -11,7 +11,6 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	authgrpc "github.com/zennify/backend/internal/auth/adapters/grpc"
-	"github.com/zennify/backend/internal/auth/adapters/memory"
 	authconfig "github.com/zennify/backend/internal/auth/config"
 	"github.com/zennify/backend/internal/auth/core/services"
 	"github.com/zennify/backend/internal/shared/grpcserver"
@@ -52,8 +51,7 @@ func run() error {
 		}
 	}()
 
-	sessions := memory.NewRefreshSessionStore()
-	svc, err := services.NewService(users, sessions, []byte(cfg.JWTSecret), cfg.AccessTTL, cfg.RefreshTTL)
+	svc, err := services.NewService(users, []byte(cfg.JWTSecret), cfg.AccessTTL, cfg.RefreshTTL)
 	if err != nil {
 		return fmt.Errorf("services: %w", err)
 	}

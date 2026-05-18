@@ -46,3 +46,11 @@ func (s *Service) GetUserByUsername(ctx context.Context, username string) (domai
 	}
 	return user, nil
 }
+
+func (s *Service) GetUserByID(ctx context.Context, userID string) (domain.User, error) {
+	user, err := s.users.GetByID(ctx, userID)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return user, nil
+}

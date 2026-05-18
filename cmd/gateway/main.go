@@ -50,8 +50,19 @@ func run() error {
 		}
 	}()
 
+	userConn, err := grpcstore.NewUserConn(cfg.UserGRPCAddr)
+	if err != nil {
+		return fmt.Errorf("user conn: %w", err)
+	}
+	defer func() {
+		if err := userConn.Close(); err != nil {
+			logger.Error("close user grpc connection", zap.Error(err))
+		}
+	}()
+
 	authClient := grpcstore.NewAuthClient(authConn)
-	svc := services.NewService(authClient, []byte(cfg.JWTSecret), cfg.RequestTimeout)
+	userClient := grpcstore.NewUserClient(userConn)
+	svc := services.NewService(authClient, userClient, []byte(cfg.JWTSecret), cfg.RequestTimeout)
 	router := httpapi.NewRouter(svc, logger)
 
 	return httpserver.Run(cfg.HTTPAddr, "api-gateway", cfg.ShutdownTimeout, router)

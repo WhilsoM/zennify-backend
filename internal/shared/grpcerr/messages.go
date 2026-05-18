@@ -1,5 +1,6 @@
 package grpcerr
 
+// Stable, client-safe error messages. Use with ClientError; map at the gateway to HTTP status.
 const (
 	MsgUsernameTaken       = "username already taken"
 	MsgInvalidCredentials  = "invalid credentials"

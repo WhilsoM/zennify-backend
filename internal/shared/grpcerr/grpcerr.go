@@ -1,3 +1,7 @@
+// Package grpcerr builds gRPC status errors with stable client messages (Msg*).
+//
+// Use only in gRPC adapters (internal/*/adapters/grpc).
+// HTTP gateway maps upstream gRPC errors in adapters/http/errors.go.
 package grpcerr
 
 import (
@@ -5,18 +9,22 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func ClientError(code codes.Code, message string) error {
-	return status.Error(code, message)
+func InvalidRequest() error {
+	return status.Error(codes.InvalidArgument, MsgInvalidRequest)
 }
 
-func Convert(err error) *status.Status {
-	return status.Convert(err)
+func Internal() error {
+	return status.Error(codes.Internal, MsgInternal)
 }
 
-func ClientMessage(err error) string {
-	return status.Convert(err).Message()
+func NotFound(msg string) error {
+	return status.Error(codes.NotFound, msg)
 }
 
-func Code(err error) codes.Code {
-	return status.Convert(err).Code()
+func AlreadyExists(msg string) error {
+	return status.Error(codes.AlreadyExists, msg)
+}
+
+func Unauthenticated(msg string) error {
+	return status.Error(codes.Unauthenticated, msg)
 }

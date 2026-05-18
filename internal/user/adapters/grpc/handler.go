@@ -2,10 +2,8 @@ package grpcapi
 
 import (
 	"context"
-	"errors"
 
 	"github.com/go-playground/validator/v10"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	userv1 "github.com/zennify/backend/gen/go/user/v1"
@@ -39,12 +37,12 @@ func (u *userServer) CreateUser(ctx context.Context, req *userv1.CreateUserReque
 		Password: req.GetPassword(),
 	}
 	if err := u.vld.Struct(in); err != nil {
-		return nil, grpcerr.ClientError(codes.InvalidArgument, grpcerr.MsgInvalidRequest)
+		return nil, grpcerr.InvalidRequest()
 	}
 
 	user, err := u.svc.CreateUser(ctx, in)
 	if err != nil {
-		return nil, mapUserErr(err)
+		return nil, toGRPC(err)
 	}
 
 	return &userv1.CreateUserResponse{
@@ -57,12 +55,12 @@ func (u *userServer) CreateUser(ctx context.Context, req *userv1.CreateUserReque
 func (u *userServer) GetUserByUsername(ctx context.Context, req *userv1.GetUserByUsernameRequest) (*userv1.GetUserByUsernameResponse, error) {
 	username := req.GetUsername()
 	if username == "" {
-		return nil, grpcerr.ClientError(codes.InvalidArgument, grpcerr.MsgInvalidRequest)
+		return nil, grpcerr.InvalidRequest()
 	}
 
 	user, err := u.svc.GetUserByUsername(ctx, username)
 	if err != nil {
-		return nil, mapUserErr(err)
+		return nil, toGRPC(err)
 	}
 
 	return &userv1.GetUserByUsernameResponse{
@@ -73,13 +71,20 @@ func (u *userServer) GetUserByUsername(ctx context.Context, req *userv1.GetUserB
 	}, nil
 }
 
-func mapUserErr(err error) error {
-	switch {
-	case errors.Is(err, ports.ErrUsernameTaken):
-		return grpcerr.ClientError(codes.AlreadyExists, grpcerr.MsgUsernameTaken)
-	case errors.Is(err, ports.ErrUserNotFound):
-		return grpcerr.ClientError(codes.NotFound, grpcerr.MsgUserNotFound)
-	default:
-		return grpcerr.ClientError(codes.Internal, grpcerr.MsgInternal)
+func (u *userServer) GetUserByID(ctx context.Context, req *userv1.GetUserByIDRequest) (*userv1.GetUserProfileResponse, error) {
+	userID := req.GetUserId()
+	if userID == "" {
+		return nil, grpcerr.InvalidRequest()
 	}
+
+	user, err := u.svc.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, toGRPC(err)
+	}
+
+	return &userv1.GetUserProfileResponse{
+		UserId:    user.ID.String(),
+		Username:  user.Username,
+		CreatedAt: timestamppb.New(user.CreatedAt),
+	}, nil
 }
