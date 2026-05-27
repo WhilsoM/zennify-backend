@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	grpcstore "github.com/zennify/backend/internal/gateway/adapters/grpc"
-	httpapi "github.com/zennify/backend/internal/gateway/adapters/http"
+	http "github.com/zennify/backend/internal/gateway/adapters/http"
 	"github.com/zennify/backend/internal/gateway/config"
 	"github.com/zennify/backend/internal/gateway/core/services"
 	"github.com/zennify/backend/internal/shared/httpserver"
@@ -36,13 +36,25 @@ func run() error {
 	}()
 
 	logger.Info("gateway grpc targets",
-		zap.String("auth", cfg.AuthGRPCAddr),
-		zap.String("user", cfg.UserGRPCAddr),
+		zap.String("auth", cfg.GrpcAddrs.AuthGRPCAddr),
+		zap.String("user", cfg.GrpcAddrs.UserGRPCAddr),
 	)
 
-	authConn, err := grpcstore.NewAuthConn(cfg.AuthGRPCAddr)
+	authClient, userClient, err := initGRPCClients(cfg, logger)
 	if err != nil {
-		return fmt.Errorf("auth conn: %w", err)
+		return fmt.Errorf("init grpc clients: %w", err)
+	}
+
+	svc := services.NewService(authClient, userClient, []byte(cfg.JWTSecret), cfg.RequestTimeout)
+	router := http.NewRouter(svc, logger)
+
+	return httpserver.Run(cfg.HTTPAddr, "api-gateway", cfg.ShutdownTimeout, router)
+}
+
+func initGRPCClients(cfg *config.Config, logger *zap.Logger) (*grpcstore.AuthClient, *grpcstore.UserClient, error) {
+	authConn, err := grpcstore.NewAuthConn(cfg.GrpcAddrs.AuthGRPCAddr)
+	if err != nil {
+		return nil, nil, fmt.Errorf("auth conn: %w", err)
 	}
 	defer func() {
 		if err := authConn.Close(); err != nil {
@@ -50,9 +62,9 @@ func run() error {
 		}
 	}()
 
-	userConn, err := grpcstore.NewUserConn(cfg.UserGRPCAddr)
+	userConn, err := grpcstore.NewUserConn(cfg.GrpcAddrs.UserGRPCAddr)
 	if err != nil {
-		return fmt.Errorf("user conn: %w", err)
+		return nil, nil, fmt.Errorf("user conn: %w", err)
 	}
 	defer func() {
 		if err := userConn.Close(); err != nil {
@@ -62,8 +74,6 @@ func run() error {
 
 	authClient := grpcstore.NewAuthClient(authConn)
 	userClient := grpcstore.NewUserClient(userConn)
-	svc := services.NewService(authClient, userClient, []byte(cfg.JWTSecret), cfg.RequestTimeout)
-	router := httpapi.NewRouter(svc, logger)
 
-	return httpserver.Run(cfg.HTTPAddr, "api-gateway", cfg.ShutdownTimeout, router)
+	return authClient, userClient, nil
 }

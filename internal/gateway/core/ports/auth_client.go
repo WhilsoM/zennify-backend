@@ -30,5 +30,5 @@ type LoginRequest struct {
 }
 
 type RefreshTokensRequest struct {
-	RefreshToken string `json:"refresh_token" validate:"required,min=1,max=256"`
+	RefreshToken string `json:"refresh_token" validate:"required,min=1,max=550"`
 }

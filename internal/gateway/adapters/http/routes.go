@@ -1,4 +1,4 @@
-package httpapi
+package http
 
 import (
 	"net/http"
@@ -12,6 +12,7 @@ import (
 func NewRouter(svc *services.Service, logger *zap.Logger) http.Handler {
 	h := newHandler(svc)
 	r := chi.NewRouter()
+
 	r.Use(requestIDMiddleware)
 	r.Use(recoverMiddleware(logger))
 	r.Use(loggingMiddleware(logger))
@@ -23,6 +24,8 @@ func NewRouter(svc *services.Service, logger *zap.Logger) http.Handler {
 	r.Group(func(gr chi.Router) {
 		gr.Use(authMiddleware(svc))
 		mountProtectedRoutes(gr, h)
+
+		gr.Get("/ws", h.connectWs)
 	})
 
 	return r

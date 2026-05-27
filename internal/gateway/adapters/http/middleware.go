@@ -1,6 +1,9 @@
-package httpapi
+package http
 
 import (
+	"bufio"
+	"errors"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -74,12 +77,15 @@ func loggingMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
 func authMiddleware(svc *services.Service) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authHeader := strings.TrimSpace(r.Header.Get("Authorization"))
-			if authHeader == "" || !strings.HasPrefix(strings.ToLower(authHeader), "bearer ") {
-				writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "missing bearer token"})
-				return
+			token := extractAccessTokenFromHeader(r)
+			if token == "" {
+				token = extractAccessTokenFromQuery(r)
+				if token == "" {
+					writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "missing access token"})
+					return
+				}
 			}
-			token := strings.TrimSpace(authHeader[len("bearer "):])
+
 			claims, err := svc.ValidateAccessToken(token)
 			if err != nil {
 				writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid token"})
@@ -93,4 +99,24 @@ func authMiddleware(svc *services.Service) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(withUserClaims(r.Context(), claims.UserID, claims.Username)))
 		})
 	}
+}
+
+func (w *statusResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hijacker, ok := w.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("hijack not supported")
+	}
+	return hijacker.Hijack()
+}
+
+func extractAccessTokenFromHeader(r *http.Request) string {
+	authHeader := strings.TrimSpace(r.Header.Get("Authorization"))
+	if authHeader == "" || !strings.HasPrefix(strings.ToLower(authHeader), "bearer ") {
+		return ""
+	}
+	return strings.TrimSpace(authHeader[len("bearer "):])
+}
+
+func extractAccessTokenFromQuery(r *http.Request) string {
+	return strings.TrimSpace(r.URL.Query().Get("access_token"))
 }

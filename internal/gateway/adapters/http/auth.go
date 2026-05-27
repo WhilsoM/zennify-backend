@@ -1,7 +1,8 @@
-package httpapi
+package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"google.golang.org/grpc/codes"
@@ -56,6 +57,7 @@ func (h *Handler) refresh(w http.ResponseWriter, r *http.Request) {
 		writeErrorJSON(w, status.Error(codes.InvalidArgument, ""))
 		return
 	}
+	fmt.Println("req", req.RefreshToken)
 	if err := h.vld.Struct(req); err != nil {
 		writeErrorJSON(w, status.Error(codes.InvalidArgument, ""))
 		return
